@@ -1,0 +1,14 @@
+
+
+.env
+.envrc
+
+# Python files
+__pycache__/
+*.egg-info/
+.coverage
+.venv
+venv
+.pytest_cache
+dist/
+pytest-coverage.txt
