@@ -44,10 +44,10 @@ scrapy crawl gmatch
 
 ```bash
 cd gmatch/analytics/hypothesis
-python url_hyphotesis
+python url_n_title_hypothesis.py 
 ```
 
-It will save results into `gmatch/analytics/hypothesis/data/result.csv`.
+It will save results into `gmatch/analytics/hypothesis/data/result_url_n_title_hypotesis.csv`.
 
 ## Implementation
 
@@ -81,6 +81,7 @@ How it works:
       1. Split name of the company (`Prime Care Technologies` -> `prime` `card` `technologies`)
       2. Remove from splitted name stop words (like `llc`, `inc`, etc.)
       3. Find domain in search list, that contains at least one of words from previous step.
+   4. Find out if company name appears in short description (text under the link in Google search)
 
 ## Problems
 
@@ -118,10 +119,6 @@ Where:
  - Matcher - Matcher.
  - SiteScraper - Scraper, that takes personal links, scrapes them and returns information to Matcher.
 
-
-### Google URL matching
-
-Currently, Matcher takes only url into account. Without description (that is text under link in google search results).
 
 ### Domain stop list
 

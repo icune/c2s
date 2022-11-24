@@ -12,15 +12,18 @@ class CompanyInitialInfo:
     name: str
     address: str
 
+
 @dataclass
 class CompanyExtendedInfo:
     url: str
+
 
 @dataclass
 class GoogleSearchListItem:
     href: Optional[str]
     title: Optional[str]
     short_description: Optional[str]
+
 
 @dataclass
 class GoogleItem:

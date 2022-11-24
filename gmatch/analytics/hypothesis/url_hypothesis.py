@@ -1,83 +1,60 @@
 """Check if any part of name contained in company url."""
-import csv
-import re
 from collections import Counter
-from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
 
+from gmatch.analytics.hypothesis import get_manual_stop_domains, write_result_csv, get_company_stop_words, find_matches, \
+    lemmatize_company, domain_2l, is_url_ignored
 from gmatch.analytics.load_data import load_data
-from gmatch.gmatch.items import GoogleItem
+from gmatch.gmatch.items import GoogleItem, CompanyInitialInfo, GoogleSearchListItem
 
 
-def match_name_with_url(name: str, url: str, stop_domains: List[str]) -> bool:
+def match_name_with_url(name: str, url: str, stop_domains: List[str], company_stop_words: List[str]) -> bool:
     if not url:
         return False
 
-    if any([sw in url for sw in stop_domains]):
+    if is_url_ignored(url, stop_domains):
         return False
 
-    stop_words = ['inc', 'llc', 'company']
-    rem_symbols = r'\.|,'
+    parts = lemmatize_company(name, company_stop_words)
 
-    parts = re.split(r'\s+', name)
-    parts = [p.lower() for p in parts]
-    parts = [re.sub(rem_symbols, '', p) for p in parts]
-    parts = [p for p in parts if p not in stop_words]
-
-    url_domain = urlparse(url).netloc
+    url_domain = domain_2l(url)
 
     return any([(p in url_domain) for p in parts])
 
 
-def domain_2l(domain: str) -> str:
-    return '.'.join(domain.split('.')[-2:])
 
 
 def find_stop_domains(data: List[GoogleItem]) -> List[str]:
 
     domain_counter = Counter(sum([
         [
-            domain_2l(urlparse(sl.href).netloc) for sl in gi.search_list if sl.href
+            domain_2l(sl.href) for sl in gi.search_list if sl.href
         ]
         for gi in data
     ], []))
 
-    return [d for d, c in domain_counter.items() if c > 1]
+    return [d for d, c in domain_counter.items() if c > 10]
 
 
-if __name__ == "__main__":
+def run():
     data = load_data()
 
     stop_domains = find_stop_domains(data)
 
-    data_folder = Path(__file__).parent / "data"
+    stop_domains.extend(get_manual_stop_domains())
+    stop_words = get_company_stop_words()
 
-    with open(data_folder / "stop_domains.txt", "r") as f:
-        manual = [l.strip() for l in f.read().split("\n") if l]
-        stop_domains.extend(manual)
+    def matcher(company: CompanyInitialInfo, sl: GoogleSearchListItem) -> bool:
+        return match_name_with_url(company.name, sl.href, stop_domains, stop_words)
 
-    ret = {}
-    for row in data:
-        ret[row.company.name] = None
-        for sl in row.search_list:
-            if match_name_with_url(row.company.name, sl.href, stop_domains):
-                ret[row.company.name] = sl.href
-                break
+    result_rows = find_matches(data, [matcher])
 
-    result_rows = [["Company", "Address", "Site"]]
+    write_result_csv(result_rows, 'result_url_hypotesis.csv')
 
-    for row in data:
-        result_rows.append([
-            row.company.name,
-            row.company.address,
-            ret[row.company.name]
-        ])
 
-    with open(data_folder / 'result.csv', 'w') as file:
-        writer = csv.writer(file)
-        for row in result_rows:
-            writer.writerow(row)
+if __name__ == "__main__":
+    run()
 
 
 

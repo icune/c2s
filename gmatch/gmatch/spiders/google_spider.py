@@ -6,7 +6,7 @@ import scrapy
 from bs4 import BeautifulSoup
 from scrapy.http import TextResponse
 
-from gmatch.items import CompanyInitialInfo, GoogleItem, GoogleSearchListItem
+from gmatch.gmatch.items import CompanyInitialInfo, GoogleItem, GoogleSearchListItem
 
 
 class GoogleSpider(scrapy.Spider):
@@ -14,9 +14,11 @@ class GoogleSpider(scrapy.Spider):
 
     def start_requests(self):
         companies = self._get_companies()
-        surl = lambda x: f'https://www.google.com/search?hl=en&q={x}'
+        surl = lambda search_word, start: f'https://www.google.com/search?hl=en&q={search_word}&start={start}'
         for company in companies:
-            yield scrapy.Request(surl(company.name), meta={"company": company})
+            for start in [0, 10]:
+                yield scrapy.Request(surl(company.name + ' ' + company.address, start), meta={"company": company})
+                yield scrapy.Request(surl(company.name, start), meta={"company": company})
 
     def parse(self, response: TextResponse) -> GoogleItem:
         yield self._parse_companies(response.text, response.meta["company"])
