@@ -55,24 +55,27 @@ class GoogleSpider(scrapy.Spider):
                 rows.append(r)
 
         rows = rows[1:]
+        rows = [r for r in rows if len(r) == 3]
 
-        fail_cond = any([
-            len(r) != 3 or
-            not type(r[0]) is str or
-            not type(r[2]) is str or
-            not r[0].strip() or
-            not r[1].strip()
+        problem_rows = [
+            r
             for r in rows
-        ])
+            if
+                not type(r[0]) is str or
+                not r[0].strip()
+        ]
 
-        if fail_cond:
+        if len(problem_rows):
+            problem_rows_str = "\n".join([", ".join(r) for r in problem_rows])
             raise Exception("""
                 companies.csv must have next structure:
                 
                 Company Name,,Company Address
                 Some Name,,"Some address"
                 
-            """)
+                Rows with problems:
+                %s
+            """ % problem_rows_str)
 
         return [
             CompanyInitialInfo(
