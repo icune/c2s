@@ -45,6 +45,9 @@ class GoogleSpider(scrapy.Spider):
     def _get_companies(self) -> List[CompanyInitialInfo]:
         path = Path(__file__).parent.absolute() / "data" / "companies.csv"
 
+        if not path.exists():
+            raise Exception(f"{path} does not exists. But it please before running script")
+
         rows = []
         with open(path, 'r') as f:
             reader = csv.reader(f, delimiter=',')
@@ -52,6 +55,24 @@ class GoogleSpider(scrapy.Spider):
                 rows.append(r)
 
         rows = rows[1:]
+
+        fail_cond = any([
+            len(r) != 3 or
+            not type(r[0]) is str or
+            not type(r[2]) is str or
+            not r[0].strip() or
+            not r[1].strip()
+            for r in rows
+        ])
+
+        if fail_cond:
+            raise Exception("""
+                companies.csv must have next structure:
+                
+                Company Name,,Company Address
+                Some Name,,"Some address"
+                
+            """)
 
         return [
             CompanyInitialInfo(
