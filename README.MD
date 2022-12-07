@@ -132,3 +132,7 @@ Except Google, there're other sources, for example Angellist, LinkedIn, etc.
 To make parser confident, we can take data from several sources and compare results.
 
 
+### Scraper stability
+
+Currently scraper may not grab all results from the first run.
+It needs some enhancements.
